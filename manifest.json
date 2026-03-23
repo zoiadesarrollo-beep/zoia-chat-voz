@@ -1,0 +1,20 @@
+{
+  "name": "Zoia",
+  "short_name": "Zoia",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#03131f",
+  "theme_color": "#03131f",
+  "icons": [
+    {
+      "src": "favicon_zoia.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "favicon_zoia.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
