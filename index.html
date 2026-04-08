@@ -527,13 +527,13 @@
     </div>
 
     <audio id="player" class="audio-player" controls></audio>
-    <div class="hint">Di "Zoia" una vez para activarla. Después tendrás 1 minuto de escucha libre sin repetir su nombre.</div>
+    <div class="hint">Zoia escucha automáticamente y detecta silencio para enviar. Puedes añadir palabra de activación después.</div>
   </div>
 
   <script>
     const WEBHOOK_URL = 'https://zoia-n8n-n8n.bierdv.easypanel.host/webhook/voice-chat';
     const WELCOME_TEXT = 'Hola, soy Zoia. En qué te puedo ayudar?';
-    const WAKE_WORD = 'zoya';
+    const WAKE_WORD = 'zoia';
     const WAKE_WINDOW_MS = 60000;
 
     const app = document.getElementById('app');
@@ -624,40 +624,6 @@
       interimTranscript = '';
       liveTextEl.textContent = '—';
     }
-	
-	function normalizeText(text) {
-	  return (text || '')
-		.toLowerCase()
-		.normalize('NFD')
-		.replace(/[\u0300-\u036f]/g, '')
-		.replace(/[^a-z0-9\s]/g, ' ')
-		.replace(/\s+/g, ' ')
-		.trim();
-	}
-	
-	function openWakeWindow() {
-	  wakeMode = false;
-	  wakeWindowUntil = Date.now() + WAKE_WINDOW_MS;
-	}
-	
-	function wakeWindowActive() {
-	  return !wakeMode && Date.now() < wakeWindowUntil;
-	}
-	
-	function refreshWakeMode() {
-	  if (!wakeWindowActive()) {
-		wakeMode = true;
-		wakeWindowUntil = 0;
-	  }
-	}
-	
-	function transcriptWithoutWakeWord(text) {
-	  const normalized = normalizeText(text);
-	  if (!normalized) return '';
-	  const idx = normalized.indexOf(WAKE_WORD);
-	  if (idx === -1) return normalized;
-	  return normalized.slice(idx + WAKE_WORD.length).trim();
-	}
 
     function renderLiveText() {
       const text = `${finalTranscriptBuffer} ${interimTranscript}`.trim();
@@ -698,67 +664,38 @@
     }
 
     function setupSpeechRecognition() {
-	  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-	  if (!SR) return;
-	
-	  recognition = new SR();
-	  recognition.lang = 'es-ES';
-	  recognition.continuous = true;
-	  recognition.interimResults = true;
-	
-	  recognition.onresult = (event) => {
-		interimTranscript = '';
-		let batchText = '';
-	
-		for (let i = event.resultIndex; i < event.results.length; i++) {
-		  const transcript = event.results[i][0].transcript.trim();
-		  if (!transcript) continue;
-		  batchText += ` ${transcript}`;
-	
-		  if (event.results[i].isFinal) {
-			if (wakeMode && !commandListening) {
-			  wakeTranscript = `${wakeTranscript} ${transcript}`.trim();
-			} else {
-			  finalTranscriptBuffer = `${finalTranscriptBuffer} ${transcript}`.trim();
-			}
-		  } else {
-			interimTranscript += ` ${transcript}`;
-		  }
-		}
-	
-		const combinedWake = normalizeText(`${wakeTranscript} ${batchText}`);
-	
-		if (wakeMode && !commandListening) {
-		  liveTextEl.textContent = combinedWake || 'Esperando la palabra Zoia...';
-	
-		  if (combinedWake.includes(WAKE_WORD)) {
-			commandListening = true;
-			wakeTranscript = '';
-			openWakeWindow();
-	
-			const immediateCommand = transcriptWithoutWakeWord(combinedWake);
-			finalTranscriptBuffer = immediateCommand;
-			interimTranscript = '';
-			renderLiveText();
-			setMode('listening', 'Zoia activada. Te escucho...');
-		  }
-		  return;
-		}
-	
-		renderLiveText();
-	  };
-	
-	  recognition.onend = () => {
-		recognitionRunning = false;
-		if (isRecording && !isProcessing && !isSpeaking) {
-		  startRecognition();
-		}
-	  };
-	
-	  recognition.onerror = () => {
-		recognitionRunning = false;
-	  };
-	}
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return;
+
+      recognition = new SR();
+      recognition.lang = 'es-ES';
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onresult = (event) => {
+        interimTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript.trim();
+          if (event.results[i].isFinal) {
+            finalTranscriptBuffer = `${finalTranscriptBuffer} ${transcript}`.trim();
+          } else {
+            interimTranscript += ` ${transcript}`;
+          }
+        }
+        renderLiveText();
+      };
+
+      recognition.onend = () => {
+        recognitionRunning = false;
+        if (isRecording && !isProcessing && !isSpeaking) {
+          startRecognition();
+        }
+      };
+
+      recognition.onerror = () => {
+        recognitionRunning = false;
+      };
+    }
 
     function startRecognition() {
       if (!recognition || recognitionRunning || !isRecording) return;
@@ -790,31 +727,20 @@
     }
 
     function beginListeningLoop() {
-	  if (isProcessing || isSpeaking || isRecording || !mediaRecorder) return;
-	
-	  refreshWakeMode();
-	  clearLiveText();
-	  audioChunks = [];
-	  silenceTimer = null;
-	  recordingStartedAt = Date.now();
-	  localSpeaking = false;
-	  commandListening = false;
-	  wakeTranscript = '';
-	
-	  if (wakeMode) {
-		liveTextEl.textContent = 'Esperando la palabra Zoia...';
-		setMode('idle', 'Esperando "Zoia"...');
-	  } else {
-		const secondsLeft = Math.max(1, Math.ceil((wakeWindowUntil - Date.now()) / 1000));
-		liveTextEl.textContent = 'Escucha libre activa...';
-		setMode('listening', `Escucha libre activa (${secondsLeft}s)`);
-	  }
-	
-	  mediaRecorder.start(200);
-	  isRecording = true;
-	  startRecognition();
-	  watchSilence();
-	}
+      if (isProcessing || isSpeaking || isRecording || !mediaRecorder) return;
+
+      clearLiveText();
+      audioChunks = [];
+      silenceTimer = null;
+      recordingStartedAt = Date.now();
+      localSpeaking = false;
+
+      mediaRecorder.start(200);
+      isRecording = true;
+      setMode('listening', 'Te escucho...');
+      startRecognition();
+      watchSilence();
+    }
 
     function watchSilence() {
       cancelAnimationFrame(volumeLoop);
@@ -831,7 +757,7 @@
             clearTimeout(silenceTimer);
             silenceTimer = null;
           }
-        } else if ((!wakeMode || commandListening) && localSpeaking && !silenceTimer && Date.now() - recordingStartedAt > MIN_RECORD_MS) {
+        } else if (localSpeaking && !silenceTimer && Date.now() - recordingStartedAt > MIN_RECORD_MS) {
           silenceTimer = setTimeout(() => {
             stopAndSend();
           }, SILENCE_DURATION);
@@ -878,15 +804,7 @@
         }
 
         const probableText = `${finalTranscriptBuffer} ${interimTranscript}`.trim();
-
-		if (wakeMode && !commandListening) {
-		  isProcessing = false;
-		  setMode('idle', 'Esperando "Zoia"...');
-		  setTimeout(() => beginListeningLoop(), 400);
-		  return;
-		}
-		
-		if (probableText) userTextEl.textContent = probableText;
+        if (probableText) userTextEl.textContent = probableText;
 
         const formData = new FormData();
         formData.append('audio', blob, 'grabacion.' + ext);
@@ -941,7 +859,9 @@
     }
 
     async function speakWelcome() {
-		await new Promise(r => setTimeout(r, 2000))
+      // Espera 2 segundos antes de mostrar y reproducir la bienvenida
+      await new Promise(r => setTimeout(r, 2000));
+
       assistantTextEl.textContent = WELCOME_TEXT;
 
       if (!('speechSynthesis' in window)) return;
@@ -976,20 +896,18 @@
     });
 
     player.addEventListener('ended', () => {
-	  isSpeaking = false;
-	  refreshWakeMode();
-	  setMode('idle', wakeMode ? 'Esperando "Zoia"...' : 'Escucha libre activa');
-	  setTimeout(() => beginListeningLoop(), 350);
-	});
+      isSpeaking = false;
+      setMode('idle', 'Puedes hablar');
+      setTimeout(() => beginListeningLoop(), 350);
+    });
 
     player.addEventListener('pause', () => {
-	  if (!isProcessing && isSpeaking) {
-		isSpeaking = false;
-		refreshWakeMode();
-		setMode('idle', wakeMode ? 'Esperando "Zoia"...' : 'Escucha libre activa');
-		setTimeout(() => beginListeningLoop(), 350);
-	  }
-	});
+      if (!isProcessing && isSpeaking) {
+        isSpeaking = false;
+        setMode('idle', 'Puedes hablar');
+        setTimeout(() => beginListeningLoop(), 350);
+      }
+    });
 
     async function bootstrap() {
       if (hasStarted || booting) return;
@@ -1004,7 +922,7 @@
 
         setMode('idle', 'Zoia iniciada');
         await speakWelcome();
-        setMode('idle', 'Esperando "Zoia"...');
+        setMode('idle', 'Puedes hablar');
         setTimeout(() => beginListeningLoop(), 450);
       } catch (error) {
         console.error(error);
