@@ -527,13 +527,14 @@
     </div>
 
     <audio id="player" class="audio-player" controls></audio>
-    <div class="hint">Zoia permanece a la espera hasta que digas "Zoia". Después escucha tu petición, responde y vuelve a esperar.</div>
+    <div class="hint">Di "Zoia" una vez para activarla. Después tendrás 1 minuto de escucha libre sin repetir su nombre.</div>
   </div>
 
   <script>
     const WEBHOOK_URL = 'https://zoia-n8n-n8n.bierdv.easypanel.host/webhook/voice-chat';
-    const WELCOME_TEXT = 'Hola, soy Zoia. Ya estoy lista.';
+    const WELCOME_TEXT = 'Hola, soy Zoia. Ya estoy lista. Di mi nombre para activarme y luego haz tu pregunta.';
     const WAKE_WORD = 'zoya';
+    const WAKE_WINDOW_MS = 60000;
 
     const app = document.getElementById('app');
     const statusEl = document.getElementById('status');
@@ -566,6 +567,8 @@
     let wakeListening = false;
     let commandListening = false;
     let wakeTranscript = '';
+    let wakeMode = true;
+    let wakeWindowUntil = 0;
 
     let isRecording = false;
     let isProcessing = false;
@@ -632,6 +635,22 @@
 		.trim();
 	}
 	
+	function openWakeWindow() {
+	  wakeMode = false;
+	  wakeWindowUntil = Date.now() + WAKE_WINDOW_MS;
+	}
+	
+	function wakeWindowActive() {
+	  return !wakeMode && Date.now() < wakeWindowUntil;
+	}
+	
+	function refreshWakeMode() {
+	  if (!wakeWindowActive()) {
+		wakeMode = true;
+		wakeWindowUntil = 0;
+	  }
+	}
+	
 	function transcriptWithoutWakeWord(text) {
 	  const normalized = normalizeText(text);
 	  if (!normalized) return '';
@@ -694,11 +713,10 @@
 		for (let i = event.resultIndex; i < event.results.length; i++) {
 		  const transcript = event.results[i][0].transcript.trim();
 		  if (!transcript) continue;
-	
 		  batchText += ` ${transcript}`;
 	
 		  if (event.results[i].isFinal) {
-			if (wakeListening && !commandListening) {
+			if (wakeMode && !commandListening) {
 			  wakeTranscript = `${wakeTranscript} ${transcript}`.trim();
 			} else {
 			  finalTranscriptBuffer = `${finalTranscriptBuffer} ${transcript}`.trim();
@@ -708,17 +726,17 @@
 		  }
 		}
 	
-		const combined = normalizeText(`${wakeTranscript} ${batchText}`);
+		const combinedWake = normalizeText(`${wakeTranscript} ${batchText}`);
 	
-		if (wakeListening && !commandListening) {
-		  liveTextEl.textContent = combined || 'Esperando la palabra Zoia...';
+		if (wakeMode && !commandListening) {
+		  liveTextEl.textContent = combinedWake || 'Esperando la palabra Zoia...';
 	
-		  if (combined.includes(WAKE_WORD)) {
+		  if (combinedWake.includes(WAKE_WORD)) {
 			commandListening = true;
-			wakeListening = false;
 			wakeTranscript = '';
+			openWakeWindow();
 	
-			const immediateCommand = transcriptWithoutWakeWord(combined);
+			const immediateCommand = transcriptWithoutWakeWord(combinedWake);
 			finalTranscriptBuffer = immediateCommand;
 			interimTranscript = '';
 			renderLiveText();
@@ -774,49 +792,56 @@
     function beginListeningLoop() {
 	  if (isProcessing || isSpeaking || isRecording || !mediaRecorder) return;
 	
+	  refreshWakeMode();
 	  clearLiveText();
 	  audioChunks = [];
 	  silenceTimer = null;
 	  recordingStartedAt = Date.now();
 	  localSpeaking = false;
-	  wakeListening = true;
 	  commandListening = false;
 	  wakeTranscript = '';
-	  liveTextEl.textContent = 'Esperando la palabra Zoia...';
+	
+	  if (wakeMode) {
+		liveTextEl.textContent = 'Esperando la palabra Zoia...';
+		setMode('idle', 'Esperando "Zoia"...');
+	  } else {
+		const secondsLeft = Math.max(1, Math.ceil((wakeWindowUntil - Date.now()) / 1000));
+		liveTextEl.textContent = 'Escucha libre activa...';
+		setMode('listening', `Escucha libre activa (${secondsLeft}s)`);
+	  }
 	
 	  mediaRecorder.start(200);
 	  isRecording = true;
-	  setMode('idle', 'Esperando "Zoia"...');
 	  startRecognition();
 	  watchSilence();
 	}
 
     function watchSilence() {
-	  cancelAnimationFrame(volumeLoop);
-	
-	  const check = () => {
-		if (!isRecording || isProcessing || isSpeaking) return;
-	
-		const volume = getVolumeLevel();
-		updateBars(volume);
-	
-		if (volume > SILENCE_THRESHOLD) {
-		  localSpeaking = true;
-		  if (silenceTimer) {
-			clearTimeout(silenceTimer);
-			silenceTimer = null;
-		  }
-		} else if (commandListening && localSpeaking && !silenceTimer && Date.now() - recordingStartedAt > MIN_RECORD_MS) {
-		  silenceTimer = setTimeout(() => {
-			stopAndSend();
-		  }, SILENCE_DURATION);
-		}
-	
-		volumeLoop = requestAnimationFrame(check);
-	  };
-	
-	  volumeLoop = requestAnimationFrame(check);
-	}
+      cancelAnimationFrame(volumeLoop);
+
+      const check = () => {
+        if (!isRecording || isProcessing || isSpeaking) return;
+
+        const volume = getVolumeLevel();
+        updateBars(volume);
+
+        if (volume > SILENCE_THRESHOLD) {
+          localSpeaking = true;
+          if (silenceTimer) {
+            clearTimeout(silenceTimer);
+            silenceTimer = null;
+          }
+        } else if ((!wakeMode || commandListening) && localSpeaking && !silenceTimer && Date.now() - recordingStartedAt > MIN_RECORD_MS) {
+          silenceTimer = setTimeout(() => {
+            stopAndSend();
+          }, SILENCE_DURATION);
+        }
+
+        volumeLoop = requestAnimationFrame(check);
+      };
+
+      volumeLoop = requestAnimationFrame(check);
+    }
 
     async function stopAndSend() {
       if (!isRecording) return;
@@ -852,9 +877,9 @@
           return;
         }
 
-       const probableText = `${finalTranscriptBuffer} ${interimTranscript}`.trim();
+        const probableText = `${finalTranscriptBuffer} ${interimTranscript}`.trim();
 
-		if (!commandListening || !probableText) {
+		if (wakeMode && !commandListening) {
 		  isProcessing = false;
 		  setMode('idle', 'Esperando "Zoia"...');
 		  setTimeout(() => beginListeningLoop(), 400);
@@ -950,18 +975,20 @@
     });
 
     player.addEventListener('ended', () => {
-      isSpeaking = false;
-      setMode('idle', 'Esperando "Zoia"...');
-      setTimeout(() => beginListeningLoop(), 350);
-    });
+	  isSpeaking = false;
+	  refreshWakeMode();
+	  setMode('idle', wakeMode ? 'Esperando "Zoia"...' : 'Escucha libre activa');
+	  setTimeout(() => beginListeningLoop(), 350);
+	});
 
     player.addEventListener('pause', () => {
-      if (!isProcessing && isSpeaking) {
-        isSpeaking = false;
-        setMode('idle', 'Esperando "Zoia"...');
-        setTimeout(() => beginListeningLoop(), 350);
-      }
-    });
+	  if (!isProcessing && isSpeaking) {
+		isSpeaking = false;
+		refreshWakeMode();
+		setMode('idle', wakeMode ? 'Esperando "Zoia"...' : 'Escucha libre activa');
+		setTimeout(() => beginListeningLoop(), 350);
+	  }
+	});
 
     async function bootstrap() {
       if (hasStarted || booting) return;
