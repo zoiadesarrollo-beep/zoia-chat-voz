@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zoia One</title>
+  <link rel="icon" type="image/png" href="favicon_zoia.png">
   <link rel="apple-touch-icon" href="favicon_zoia.png">
-<link rel="icon" type="image/png" href="favicon_zoia.png">
-
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#03131f">
-  <title>ZoIA</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#03131f">
   <style>
     :root{
       --bg1:#03131f;
@@ -22,6 +21,7 @@
       --muted:#8fbac3;
       --danger:#ff5f7a;
       --ok:#63ffd2;
+      --warn:#ffd166;
     }
 
     *{box-sizing:border-box}
@@ -56,8 +56,8 @@
 
     .panel{
       position:relative;
-      width:min(92vw, 560px);
-      padding: 36px 24px 32px;
+      width:min(94vw, 620px);
+      padding:34px 24px 24px;
       border:1px solid var(--glass-border);
       border-radius:28px;
       background:linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
@@ -67,8 +67,6 @@
         0 0 30px rgba(0,188,212,0.12),
         0 0 90px rgba(0,188,212,0.08);
     }
-	
-
 
     .panel::before,
     .panel::after{
@@ -97,13 +95,25 @@
       border-radius:0 0 18px 0;
     }
 
+    .zoia-logo-top{
+      display:block;
+      margin:0 auto 10px;
+      width:140px;
+      max-width:42vw;
+      filter:
+        drop-shadow(0 0 10px rgba(0,188,212,0.6))
+        drop-shadow(0 0 25px rgba(0,188,212,0.35));
+      opacity:.96;
+      animation: floatLogo 3s ease-in-out infinite;
+    }
+
     .title{
       text-align:center;
       font-size:12px;
       letter-spacing:.35em;
       text-transform:uppercase;
       color:var(--muted);
-      margin-bottom:10px;
+      margin-bottom:8px;
     }
 
     .status{
@@ -111,18 +121,32 @@
       font-size:16px;
       min-height:24px;
       color:var(--text);
-      margin-bottom:26px;
+      margin-bottom:16px;
     }
+
+    .permission-banner{
+      display:none;
+      margin:0 auto 14px;
+      width:min(100%, 420px);
+      text-align:center;
+      border:1px solid rgba(255,209,102,0.25);
+      color:#ffe29a;
+      background:rgba(255,209,102,0.08);
+      border-radius:14px;
+      padding:10px 12px;
+      font-size:14px;
+    }
+
+    .permission-banner.show{ display:block; }
 
     .core-wrap{
       position:relative;
       width:220px;
       height:220px;
-      margin:0 auto 24px;
+      margin:0 auto 18px;
       display:grid;
       place-items:center;
     }
-
 
     .ring,
     .ring::before,
@@ -164,7 +188,7 @@
       pointer-events:none;
     }
 
-    .voice-btn{
+    .core-dot{
       position:relative;
       z-index:2;
       width:110px;
@@ -174,38 +198,67 @@
       background:
         radial-gradient(circle at 30% 30%, rgba(255,255,255,0.20), transparent 25%),
         radial-gradient(circle at center, rgba(77,226,255,0.22), rgba(0,188,212,0.14) 45%, rgba(0,0,0,0.18) 100%);
-      color:var(--text);
-      cursor:pointer;
-      user-select:none;
-      -webkit-user-select:none;
-      -webkit-tap-highlight-color: transparent;
-      display:flex;
-      align-items:center;
-      justify-content:center;
       box-shadow:
         0 0 18px rgba(77,226,255,0.28),
         inset 0 0 20px rgba(77,226,255,0.22),
         inset 0 0 45px rgba(0,0,0,0.18);
-      transition: transform .12s ease, box-shadow .18s ease, border-color .18s ease;
-      touch-action:none;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+      overflow:hidden;
     }
 
-    .voice-btn:hover{
-      box-shadow:
-        0 0 28px rgba(77,226,255,0.40),
-        inset 0 0 20px rgba(77,226,255,0.28),
-        inset 0 0 45px rgba(0,0,0,0.18);
-    }
-
-    .voice-btn:active,
-    .voice-btn.pressed{
-      transform:scale(.96);
-    }
-
-    .voice-btn svg{
-      width:46px;
-      height:46px;
+    .core-dot svg{
+      width:42px;
+      height:42px;
+      stroke: var(--text);
+      fill:none;
+      stroke-width:1.8;
+      stroke-linecap:round;
+      stroke-linejoin:round;
       filter:drop-shadow(0 0 10px rgba(77,226,255,0.38));
+      opacity:.94;
+      z-index:2;
+    }
+
+    .level-wrap{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      gap:5px;
+      padding:26px;
+      z-index:1;
+      opacity:.65;
+      pointer-events:none;
+    }
+
+    .bar{
+      width:6px;
+      height:16px;
+      border-radius:999px;
+      background:linear-gradient(180deg, rgba(99,255,210,0.95), rgba(77,226,255,0.18));
+      box-shadow:0 0 10px rgba(99,255,210,0.2);
+      transform-origin:bottom center;
+      transition:height .07s linear, opacity .12s ease;
+      opacity:.55;
+    }
+
+    .wake-pill{
+      position:absolute;
+      top:8px;
+      right:8px;
+      z-index:4;
+      font-size:11px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:var(--muted);
+      border:1px solid rgba(77,226,255,0.18);
+      border-radius:999px;
+      padding:5px 8px;
+      background:rgba(255,255,255,0.03);
     }
 
     .waves{
@@ -231,31 +284,37 @@
     .wave:nth-child(2){ animation-delay:.45s; }
     .wave:nth-child(3){ animation-delay:.9s; }
 
+    .transcript-live{
+      margin:0 auto 14px;
+      width:min(100%, 520px);
+      min-height:50px;
+      padding:12px 14px;
+      border:1px solid rgba(77,226,255,0.16);
+      border-radius:16px;
+      background:rgba(255,255,255,0.04);
+    }
+
+    .transcript-live .label{
+      font-size:11px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+
+    .transcript-live .text{
+      font-size:14px;
+      color:var(--text);
+      min-height:18px;
+    }
+
     .meta{
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:12px;
       margin-top:8px;
     }
-	.logo{
-		text-align:center;
-	}
-	.zoia-logo {
-	  pointer-events: none;
-	  width:150px;
-	  filter: 
-		drop-shadow(0 0 10px rgba(0,188,212,0.6))
-		drop-shadow(0 0 25px rgba(0,188,212,0.4));
-	  opacity: 0.95;
-	  animation: floatLogo 3s ease-in-out infinite;
-	}
-	
-	
-	
-	@keyframes floatLogo {
-	  0%,100% { transform: translateY(0px); }
-	  50% { transform: translateY(-6px); }
-	}
+
     .card{
       padding:14px 16px;
       border-radius:16px;
@@ -282,17 +341,64 @@
       text-align:center;
       color:var(--muted);
       font-size:13px;
-      margin-top:18px;
+      margin-top:16px;
     }
 
     .audio-player{
       width:100%;
-      margin-top:16px;
+      margin-top:14px;
       opacity:.88;
     }
 
+    .start-overlay{
+      position:fixed;
+      inset:0;
+      z-index:20;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:rgba(0,0,0,0.6);
+      backdrop-filter:blur(10px);
+      padding:22px;
+    }
+
+    .start-card{
+      width:min(92vw, 420px);
+      padding:28px 24px;
+      border-radius:24px;
+      border:1px solid rgba(77,226,255,0.24);
+      background:linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.04));
+      box-shadow:0 0 35px rgba(0,188,212,0.18);
+      text-align:center;
+    }
+
+    .start-card h1{
+      margin:0 0 10px;
+      font-size:26px;
+      font-weight:700;
+    }
+
+    .start-card p{
+      margin:0 0 18px;
+      color:var(--muted);
+      line-height:1.5;
+    }
+
+    .start-btn{
+      border:1px solid rgba(77,226,255,0.45);
+      background:linear-gradient(180deg, rgba(77,226,255,0.16), rgba(0,188,212,0.08));
+      color:var(--text);
+      border-radius:999px;
+      padding:14px 22px;
+      font-size:16px;
+      cursor:pointer;
+      box-shadow:0 0 24px rgba(77,226,255,0.18), inset 0 0 14px rgba(77,226,255,0.12);
+    }
+
+    .start-btn:hover{ transform:translateY(-1px); }
+
     .listening .waves{ opacity:1; }
-    .listening .voice-btn{
+    .listening .core-dot{
       border-color:rgba(99,255,210,0.95);
       box-shadow:
         0 0 30px rgba(99,255,210,0.35),
@@ -300,12 +406,12 @@
         inset 0 0 45px rgba(0,0,0,0.18);
     }
 
-    .processing .voice-btn{
+    .processing .core-dot{
       border-color:rgba(90,169,255,0.95);
       animation: processingPulse 1s ease-in-out infinite;
     }
 
-    .speaking .voice-btn{
+    .speaking .core-dot{
       border-color:rgba(77,226,255,0.95);
       box-shadow:
         0 0 34px rgba(77,226,255,0.45),
@@ -339,41 +445,72 @@
       0%,100%{ transform:scale(1); }
       50%{ transform:scale(1.04); }
     }
+
+    @keyframes floatLogo {
+      0%,100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+
+    @media (max-width: 640px){
+      .panel{ padding:28px 16px 18px; }
+      .meta{ grid-template-columns:1fr; }
+      .core-wrap{ width:200px; height:200px; }
+      .core-dot{ width:98px; height:98px; }
+      .zoia-logo-top{ width:120px; }
+    }
   </style>
 </head>
 <body>
   <div class="hud-bg"></div>
 
-  <div class="panel" id="app">
-    <div class="logo"><img src="zoia-logo.png" class="zoia-logo" /></div>
-    <div class="status" id="status">Mantén pulsado para hablar</div>
-
-    <div class="core-wrap" id="coreWrap">
-
-  <div class="ring"></div>
-  <div class="sweep"></div>
-
-  <div class="waves">
-    <div class="wave"></div>
-    <div class="wave"></div>
-    <div class="wave"></div>
+  <div class="start-overlay" id="startOverlay">
+    <div class="start-card">
+      <h1>Zoia One</h1>
+      <p>Pulsa una vez para activar micrófono, audio y bienvenida. Después Zoia escuchará sola y responderá sin botones.</p>
+      <button class="start-btn" id="startBtn">Iniciar Zoia</button>
+    </div>
   </div>
 
-  <button id="holdBtn" class="voice-btn">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-      <path d="M12 15a3 3 0 0 0 3-3V7a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z"/>
-      <path d="M19 11a7 7 0 0 1-14 0"/>
-      <path d="M12 18v3"/>
-      <path d="M8 21h8"/>
-    </svg>
-  </button>
+  <div class="panel" id="app">
+    <img src="zoia-logo.png" class="zoia-logo-top" alt="Zoia One">
 
-</div>
+    <div class="title">Voice Interface</div>
+    <div class="status" id="status">Esperando inicio...</div>
+    <div class="permission-banner" id="permissionBanner">Si el navegador bloquea audio o micrófono, pulsa “Iniciar Zoia” otra vez.</div>
+
+    <div class="core-wrap">
+      <div class="wake-pill">Auto</div>
+      <div class="ring"></div>
+      <div class="sweep"></div>
+
+      <div class="waves">
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+      </div>
+
+      <div class="core-dot">
+        <div class="level-wrap" id="levelWrap">
+          <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        </div>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 15a3 3 0 0 0 3-3V7a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z"/>
+          <path d="M19 11a7 7 0 0 1-14 0"/>
+          <path d="M12 18v3"/>
+          <path d="M8 21h8"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="transcript-live">
+      <div class="label">Escucha en tiempo real</div>
+      <div class="text" id="liveText">—</div>
+    </div>
 
     <div class="meta">
       <div class="card">
         <div class="label">Estado</div>
-        <div class="value" id="stateValue">En espera</div>
+        <div class="value" id="stateValue">Esperando</div>
       </div>
       <div class="card">
         <div class="label">Sesión</div>
@@ -390,27 +527,52 @@
     </div>
 
     <audio id="player" class="audio-player" controls></audio>
-    <div class="hint">Mantén pulsado el núcleo central para grabar. Suelta para enviar.</div>
+    <div class="hint">Zoia escucha automáticamente y detecta silencio para enviar. Puedes añadir palabra de activación después.</div>
   </div>
 
   <script>
-    const WEBHOOK_URL = 'https://zoia-n8n-n8n.bierdv.easypanel.host/webhook/voice-chat';
+    const WEBHOOK_URL = 'https://TU-DOMINIO-N8N/webhook/voice-chat';
+    const WELCOME_TEXT = 'Hola, soy Zoia. Ya estoy lista. Puedes hablar cuando quieras.';
 
     const app = document.getElementById('app');
-    const holdBtn = document.getElementById('holdBtn');
     const statusEl = document.getElementById('status');
     const stateValue = document.getElementById('stateValue');
     const sessionValue = document.getElementById('sessionValue');
     const userTextEl = document.getElementById('userText');
     const assistantTextEl = document.getElementById('assistantText');
+    const liveTextEl = document.getElementById('liveText');
     const player = document.getElementById('player');
+    const levelWrap = document.getElementById('levelWrap');
+    const startOverlay = document.getElementById('startOverlay');
+    const startBtn = document.getElementById('startBtn');
+    const permissionBanner = document.getElementById('permissionBanner');
+
+    const bars = [...levelWrap.querySelectorAll('.bar')];
 
     let mediaRecorder = null;
     let mediaStream = null;
     let audioChunks = [];
+    let audioContext = null;
+    let analyser = null;
+    let source = null;
+    let silenceTimer = null;
+    let volumeLoop = null;
+    let recognition = null;
+    let recognitionRunning = false;
+    let finalTranscriptBuffer = '';
+    let interimTranscript = '';
+    let localSpeaking = false;
+
     let isRecording = false;
-    let isBusy = false;
-    let activePointerId = null;
+    let isProcessing = false;
+    let isSpeaking = false;
+    let hasStarted = false;
+    let booting = false;
+
+    const SILENCE_THRESHOLD = 13;
+    const SILENCE_DURATION = 1400;
+    const MIN_RECORD_MS = 700;
+    let recordingStartedAt = 0;
 
     let sessionId = localStorage.getItem('voiceSessionId');
     if (!sessionId) {
@@ -421,110 +583,230 @@
 
     function setMode(mode, text) {
       app.classList.remove('listening', 'processing', 'speaking', 'error');
-
-      if (mode) app.classList.add(mode);
+      if (mode && mode !== 'idle') app.classList.add(mode);
 
       statusEl.textContent = text || '';
+
       const labels = {
+        idle: 'En espera',
         listening: 'Escuchando',
         processing: 'Procesando',
-        speaking: 'Reproduciendo',
-        error: 'Error',
-        idle: 'En espera'
+        speaking: 'Hablando',
+        error: 'Error'
       };
-      stateValue.textContent = labels[mode] || labels.idle;
+      stateValue.textContent = labels[mode] || 'En espera';
+    }
+
+    function showPermissionHint(show = true) {
+      permissionBanner.classList.toggle('show', show);
+    }
+
+    function updateBars(level = 0) {
+      const normalized = Math.max(0, Math.min(100, level));
+      bars.forEach((bar, index) => {
+        const threshold = (index + 1) * 10;
+        const active = normalized >= threshold;
+        const extra = active ? Math.min(44, normalized - threshold + 12) : 0;
+        bar.style.height = `${16 + extra}px`;
+        bar.style.opacity = active ? '1' : '0.3';
+      });
+    }
+
+    function clearLiveText() {
+      finalTranscriptBuffer = '';
+      interimTranscript = '';
+      liveTextEl.textContent = '—';
+    }
+
+    function renderLiveText() {
+      const text = `${finalTranscriptBuffer} ${interimTranscript}`.trim();
+      liveTextEl.textContent = text || '—';
     }
 
     function getSupportedMimeType() {
-      const types = [
-        'audio/webm;codecs=opus',
-        'audio/webm',
-        'audio/mp4',
-        'audio/ogg;codecs=opus',
-        'audio/ogg'
-      ];
-
+      const types = ['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg;codecs=opus','audio/ogg'];
       for (const type of types) {
-        if (window.MediaRecorder && MediaRecorder.isTypeSupported(type)) {
-          return type;
-        }
+        if (window.MediaRecorder && MediaRecorder.isTypeSupported(type)) return type;
       }
       return '';
     }
 
-    async function startRecording() {
-      if (isBusy || isRecording) return;
+    async function setupMic() {
+      const mimeType = getSupportedMimeType();
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
 
-      try {
-        player.pause();
-
-        const mimeType = getSupportedMimeType();
-        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        audioChunks = [];
-
-        mediaRecorder = mimeType
-          ? new MediaRecorder(mediaStream, { mimeType })
-          : new MediaRecorder(mediaStream);
-
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data && event.data.size > 0) {
-            audioChunks.push(event.data);
-          }
-        };
-
-        mediaRecorder.start();
-        isRecording = true;
-        holdBtn.classList.add('pressed');
-        setMode('listening', 'Escuchando... suelta para enviar');
-      } catch (error) {
-        console.error(error);
-        setMode('error', 'No se pudo acceder al micrófono');
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
       }
+      source = audioContext.createMediaStreamSource(mediaStream);
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 2048;
+      source.connect(analyser);
+
+      mediaRecorder = mimeType ? new MediaRecorder(mediaStream, { mimeType }) : new MediaRecorder(mediaStream);
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) audioChunks.push(event.data);
+      };
     }
 
-    async function stopRecordingAndSend() {
-      if (!isRecording || !mediaRecorder) return;
+    function setupSpeechRecognition() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return;
+
+      recognition = new SR();
+      recognition.lang = 'es-ES';
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onresult = (event) => {
+        interimTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript.trim();
+          if (event.results[i].isFinal) {
+            finalTranscriptBuffer = `${finalTranscriptBuffer} ${transcript}`.trim();
+          } else {
+            interimTranscript += ` ${transcript}`;
+          }
+        }
+        renderLiveText();
+      };
+
+      recognition.onend = () => {
+        recognitionRunning = false;
+        if (isRecording && !isProcessing && !isSpeaking) {
+          startRecognition();
+        }
+      };
+
+      recognition.onerror = () => {
+        recognitionRunning = false;
+      };
+    }
+
+    function startRecognition() {
+      if (!recognition || recognitionRunning || !isRecording) return;
+      try {
+        recognition.start();
+        recognitionRunning = true;
+      } catch (e) {}
+    }
+
+    function stopRecognition() {
+      if (!recognition || !recognitionRunning) return;
+      try {
+        recognition.stop();
+      } catch (e) {}
+      recognitionRunning = false;
+    }
+
+    function getVolumeLevel() {
+      if (!analyser) return 0;
+      const data = new Uint8Array(analyser.fftSize);
+      analyser.getByteTimeDomainData(data);
+      let sum = 0;
+      for (let i = 0; i < data.length; i++) {
+        const v = (data[i] - 128) / 128;
+        sum += v * v;
+      }
+      const rms = Math.sqrt(sum / data.length);
+      return Math.round(rms * 150);
+    }
+
+    function beginListeningLoop() {
+      if (isProcessing || isSpeaking || isRecording || !mediaRecorder) return;
+
+      clearLiveText();
+      audioChunks = [];
+      silenceTimer = null;
+      recordingStartedAt = Date.now();
+      localSpeaking = false;
+
+      mediaRecorder.start(200);
+      isRecording = true;
+      setMode('listening', 'Te escucho...');
+      startRecognition();
+      watchSilence();
+    }
+
+    function watchSilence() {
+      cancelAnimationFrame(volumeLoop);
+
+      const check = () => {
+        if (!isRecording || isProcessing || isSpeaking) return;
+
+        const volume = getVolumeLevel();
+        updateBars(volume);
+
+        if (volume > SILENCE_THRESHOLD) {
+          localSpeaking = true;
+          if (silenceTimer) {
+            clearTimeout(silenceTimer);
+            silenceTimer = null;
+          }
+        } else if (localSpeaking && !silenceTimer && Date.now() - recordingStartedAt > MIN_RECORD_MS) {
+          silenceTimer = setTimeout(() => {
+            stopAndSend();
+          }, SILENCE_DURATION);
+        }
+
+        volumeLoop = requestAnimationFrame(check);
+      };
+
+      volumeLoop = requestAnimationFrame(check);
+    }
+
+    async function stopAndSend() {
+      if (!isRecording) return;
 
       isRecording = false;
-      holdBtn.classList.remove('pressed');
-      isBusy = true;
-      setMode('processing', 'Procesando audio...');
+      isProcessing = true;
+      stopRecognition();
+
+      if (silenceTimer) {
+        clearTimeout(silenceTimer);
+        silenceTimer = null;
+      }
+      cancelAnimationFrame(volumeLoop);
+      updateBars(0);
+      setMode('processing', 'Procesando tu mensaje...');
 
       const stopped = new Promise((resolve) => {
         mediaRecorder.onstop = resolve;
       });
 
       mediaRecorder.stop();
-      if (mediaStream) {
-        mediaStream.getTracks().forEach(track => track.stop());
-      }
-
       await stopped;
 
       try {
         const recordedType = mediaRecorder.mimeType || 'audio/webm';
-        const ext = recordedType.includes('ogg')
-          ? 'ogg'
-          : recordedType.includes('mp4')
-          ? 'm4a'
-          : 'webm';
+        const ext = recordedType.includes('ogg') ? 'ogg' : recordedType.includes('mp4') ? 'm4a' : 'webm';
+        const blob = new Blob(audioChunks, { type: recordedType });
 
-        const audioBlob = new Blob(audioChunks, { type: recordedType });
-        if (!audioBlob.size) {
-          throw new Error('La grabación ha llegado vacía');
+        if (!blob.size || blob.size < 1500) {
+          isProcessing = false;
+          setMode('idle', 'No he detectado voz clara. Puedes hablar otra vez.');
+          setTimeout(() => beginListeningLoop(), 600);
+          return;
         }
 
+        const probableText = `${finalTranscriptBuffer} ${interimTranscript}`.trim();
+        if (probableText) userTextEl.textContent = probableText;
+
         const formData = new FormData();
-        formData.append('audio', audioBlob, 'grabacion.' + ext);
+        formData.append('audio', blob, 'grabacion.' + ext);
         formData.append('sessionId', sessionId);
 
         const response = await fetch(WEBHOOK_URL, {
           method: 'POST',
           body: formData
         });
-
-        console.log('STATUS:', response.status);
-        console.log('CONTENT-TYPE:', response.headers.get('content-type'));
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -533,96 +815,115 @@
 
         const contentType = response.headers.get('content-type') || '';
 
-        let audioBlobResponse;
-        if (contentType.includes('audio/mpeg')) {
-          const arrayBuffer = await response.arrayBuffer();
-          audioBlobResponse = new Blob([arrayBuffer], { type: 'audio/mpeg' });
-        } else if (contentType.includes('audio/wav') || contentType.includes('audio/x-wav')) {
-          const arrayBuffer = await response.arrayBuffer();
-          audioBlobResponse = new Blob([arrayBuffer], { type: 'audio/wav' });
-        } else if (contentType.includes('application/json')) {
+        if (contentType.includes('application/json')) {
           const data = await response.json();
-          console.log('JSON recibido:', data);
-          userTextEl.textContent = data.transcript || data.text || '—';
-          assistantTextEl.textContent = data.reply || data.response || '—';
-          throw new Error('El webhook está devolviendo JSON, no audio binario');
-        } else {
-          const arrayBuffer = await response.arrayBuffer();
-          audioBlobResponse = new Blob([arrayBuffer], { type: 'audio/mpeg' });
+          userTextEl.textContent = data.transcript || probableText || 'Audio enviado';
+          assistantTextEl.textContent = data.reply || data.response || 'Respuesta recibida';
+          throw new Error('El webhook está devolviendo JSON y no audio');
         }
 
-        const audioUrl = URL.createObjectURL(audioBlobResponse);
-        player.src = audioUrl;
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBlob = new Blob([arrayBuffer], { type: contentType.includes('wav') ? 'audio/wav' : 'audio/mpeg' });
+        const url = URL.createObjectURL(audioBlob);
+        player.src = url;
         player.load();
 
-        setMode('speaking', 'Respuesta recibida. Reproduciendo...');
-        assistantTextEl.textContent = 'Audio recibido';
-        userTextEl.textContent = 'Audio enviado';
+        assistantTextEl.textContent = 'Respuesta de Zoia';
+        isProcessing = false;
+        isSpeaking = true;
+        setMode('speaking', 'Zoia está respondiendo...');
 
         try {
           await player.play();
-        } catch (err) {
-          console.warn('Reproducción automática bloqueada:', err);
-          statusEl.textContent = 'Audio recibido. Pulsa play si no arranca solo';
+        } catch (e) {
+          showPermissionHint(true);
+          isSpeaking = false;
+          setMode('idle', 'Pulsa play en el reproductor y luego sigo escuchando.');
         }
-
       } catch (error) {
         console.error(error);
+        isProcessing = false;
         setMode('error', error.message || 'Ha ocurrido un error');
-      } finally {
-        isBusy = false;
-        mediaRecorder = null;
-        mediaStream = null;
-        audioChunks = [];
-        if (!app.classList.contains('error') && !app.classList.contains('speaking')) {
-          setMode('idle', 'Mantén pulsado para hablar');
-        }
+        setTimeout(() => {
+          setMode('idle', 'Vuelvo a escuchar...');
+          beginListeningLoop();
+        }, 1500);
       }
     }
 
+    async function speakWelcome() {
+      assistantTextEl.textContent = WELCOME_TEXT;
+
+      if (!('speechSynthesis' in window)) return;
+
+      return new Promise((resolve) => {
+        const utter = new SpeechSynthesisUtterance(WELCOME_TEXT);
+        utter.lang = 'es-ES';
+        utter.rate = 1;
+        utter.pitch = 1;
+
+        utter.onstart = () => {
+          isSpeaking = true;
+          setMode('speaking', 'Zoia te da la bienvenida...');
+        };
+        utter.onend = () => {
+          isSpeaking = false;
+          resolve();
+        };
+        utter.onerror = () => {
+          isSpeaking = false;
+          resolve();
+        };
+
+        speechSynthesis.cancel();
+        speechSynthesis.speak(utter);
+      });
+    }
+
     player.addEventListener('play', () => {
-      setMode('speaking', 'Reproduciendo respuesta...');
+      isSpeaking = true;
+      setMode('speaking', 'Zoia está hablando...');
     });
 
     player.addEventListener('ended', () => {
-      setMode('idle', 'Mantén pulsado para hablar');
+      isSpeaking = false;
+      setMode('idle', 'Puedes hablar');
+      setTimeout(() => beginListeningLoop(), 350);
     });
 
     player.addEventListener('pause', () => {
-      if (!isRecording && !isBusy) {
-        setMode('idle', 'Mantén pulsado para hablar');
+      if (!isProcessing && isSpeaking) {
+        isSpeaking = false;
+        setMode('idle', 'Puedes hablar');
+        setTimeout(() => beginListeningLoop(), 350);
       }
     });
 
-    holdBtn.addEventListener('pointerdown', async (e) => {
-      if (isBusy) return;
-      activePointerId = e.pointerId;
-      holdBtn.setPointerCapture(activePointerId);
-      e.preventDefault();
-      await startRecording();
-    });
+    async function bootstrap() {
+      if (hasStarted || booting) return;
+      booting = true;
+      try {
+        setMode('processing', 'Solicitando acceso al micrófono...');
+        showPermissionHint(false);
+        await setupMic();
+        setupSpeechRecognition();
+        startOverlay.style.display = 'none';
+        hasStarted = true;
 
-    holdBtn.addEventListener('pointerup', async (e) => {
-      if (activePointerId !== null && e.pointerId === activePointerId) {
-        e.preventDefault();
-        activePointerId = null;
-        await stopRecordingAndSend();
+        setMode('idle', 'Zoia iniciada');
+        await speakWelcome();
+        setMode('idle', 'Puedes hablar');
+        setTimeout(() => beginListeningLoop(), 450);
+      } catch (error) {
+        console.error(error);
+        setMode('error', 'No se pudo iniciar micrófono o audio');
+        showPermissionHint(true);
+      } finally {
+        booting = false;
       }
-    });
+    }
 
-    holdBtn.addEventListener('pointercancel', async () => {
-      activePointerId = null;
-      await stopRecordingAndSend();
-    });
-
-    holdBtn.addEventListener('lostpointercapture', async () => {
-      if (isRecording) {
-        activePointerId = null;
-        await stopRecordingAndSend();
-      }
-    });
-
-    setMode('idle', 'Mantén pulsado para hablar');
+    startBtn.addEventListener('click', bootstrap);
   </script>
 </body>
 </html>
