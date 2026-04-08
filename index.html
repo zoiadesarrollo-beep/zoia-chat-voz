@@ -476,7 +476,7 @@
 
     <div class="title">Voice Interface</div>
     <div class="status" id="status">Esperando inicio...</div>
-    <div class="permission-banner" id="permissionBanner">Si el navegador bloquea audio o micrófono, pulsa “Iniciar Zoia” otra vez.</div>
+    <div class="permission-banner" id="permissionBanner">Si el navegador bloquea audio o micrófono, pulsa "Iniciar Zoia" otra vez.</div>
 
     <div class="core-wrap">
       <div class="wake-pill">Auto</div>
@@ -531,7 +531,7 @@
   </div>
 
   <script>
-    const WEBHOOK_URL = 'https://TU-DOMINIO-N8N/webhook/voice-chat';
+    const WEBHOOK_URL = 'https://zoia-n8n-n8n.bierdv.easypanel.host/webhook/voice-chat';
     const WELCOME_TEXT = 'Hola, soy Zoia. Ya estoy lista. Puedes hablar cuando quieras.';
 
     const app = document.getElementById('app');
@@ -712,6 +712,7 @@
       analyser.getByteTimeDomainData(data);
       let sum = 0;
       for (let i = 0; i < data.length; i++) {
+
         const v = (data[i] - 128) / 128;
         sum += v * v;
       }
