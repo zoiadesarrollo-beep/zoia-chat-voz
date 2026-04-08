@@ -941,6 +941,7 @@
     }
 
     async function speakWelcome() {
+		await new Promise(r => setTimeout(r, 2000))
       assistantTextEl.textContent = WELCOME_TEXT;
 
       if (!('speechSynthesis' in window)) return;
