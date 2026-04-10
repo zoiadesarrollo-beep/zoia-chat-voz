@@ -860,9 +860,9 @@
 
     async function speakWelcome() {
       // Espera 2 segundos antes de mostrar y reproducir la bienvenida
-      await new Promise(r => setTimeout(r, 2000));
+      await new Promise(r => setTimeout(r, 100));
 
-      assistantTextEl.textContent = WELCOME_TEXT;
+      assistantTextEl.textContent ="";
 
       if (!('speechSynthesis' in window)) return;
 
