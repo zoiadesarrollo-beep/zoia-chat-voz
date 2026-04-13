@@ -401,9 +401,9 @@
     let isSpeaking = false;
     let hasStarted = false;
 
-    const SILENCE_THRESHOLD = 14;
+    const SILENCE_THRESHOLD = 20;
     const SILENCE_DURATION = 1400;
-    const MIN_RECORD_MS = 700;
+    const MIN_RECORD_MS = 1500;
 
     let recordingStartedAt = 0;
 
@@ -600,6 +600,13 @@
           isProcessing = false;
           setMode('idle', 'No he detectado voz clara. Puedes hablar otra vez.');
           setTimeout(() => beginListeningLoop(), 600);
+          return;
+        }
+        if (blob.size < 5000) {
+          console.log('Audio demasiado pequeño, ignorando...');
+          isProcessing = false;
+          setMode('idle', 'Esperando voz real...');
+          setTimeout(() => beginListeningLoop(), 500);
           return;
         }
 
