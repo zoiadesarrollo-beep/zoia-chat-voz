@@ -17,7 +17,9 @@
       --glass-border:rgba(77,226,255,0.25);
       --danger:#ff5f7a;
     }
+
     *{box-sizing:border-box}
+
     body{
       margin:0;
       min-height:100vh;
@@ -32,6 +34,7 @@
       color:var(--text);
       overflow:hidden;
     }
+
     .panel{
       width:min(94vw, 620px);
       padding:34px 24px 24px;
@@ -40,12 +43,14 @@
       background:linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
       backdrop-filter: blur(12px);
     }
+
     .zoia-logo-top{
       display:block;
       margin:0 auto 10px;
       width:140px;
       max-width:42vw;
     }
+
     .title{
       text-align:center;
       font-size:12px;
@@ -54,12 +59,14 @@
       color:var(--muted);
       margin-bottom:8px;
     }
+
     .status{
       text-align:center;
       font-size:16px;
       min-height:24px;
       margin-bottom:16px;
     }
+
     .transcript-live, .card{
       margin:0 auto 14px;
       width:min(100%, 520px);
@@ -69,6 +76,7 @@
       border-radius:16px;
       background:rgba(255,255,255,0.04);
     }
+
     .label{
       font-size:11px;
       letter-spacing:.18em;
@@ -76,22 +84,33 @@
       color:var(--muted);
       margin-bottom:6px;
     }
+
     .text{
       font-size:14px;
       min-height:18px;
+      word-break:break-word;
     }
+
     .meta{
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:12px;
       margin-top:8px;
     }
+
     .hint{
       text-align:center;
       color:var(--muted);
       font-size:13px;
       margin-top:16px;
     }
+
+    .audio-player{
+      width:100%;
+      margin-top:10px;
+      opacity:.9;
+    }
+
     .start-overlay{
       position:fixed;
       inset:0;
@@ -103,6 +122,7 @@
       backdrop-filter:blur(10px);
       padding:22px;
     }
+
     .start-card{
       width:min(92vw, 420px);
       padding:28px 24px;
@@ -111,6 +131,7 @@
       background:linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.04));
       text-align:center;
     }
+
     .start-btn{
       border:1px solid rgba(77,226,255,0.45);
       background:linear-gradient(180deg, rgba(77,226,255,0.16), rgba(0,188,212,0.08));
@@ -120,7 +141,9 @@
       font-size:16px;
       cursor:pointer;
     }
+
     .error { color: var(--danger); }
+
     @media (max-width: 640px){
       .panel{ padding:28px 16px 18px; }
       .meta{ grid-template-columns:1fr; }
@@ -132,12 +155,12 @@
   <div class="start-overlay" id="startOverlay">
     <div class="start-card">
       <h1>Zoia One</h1>
-      <p>Pulsa una vez para activar micrófono y bienvenida. Después Zoia escuchará texto y responderá por voz.</p>
+      <p>Pulsa una vez para activar micrófono y bienvenida. Después Zoia escuchará, enviará texto al agente y reproducirá el audio que devuelva n8n.</p>
       <button class="start-btn" id="startBtn">Iniciar Zoia</button>
     </div>
   </div>
 
-  <div class="panel" id="app">
+  <div class="panel">
     <img src="zoia-logo.png" class="zoia-logo-top" alt="Zoia One">
 
     <div class="title">Voice Interface</div>
@@ -163,16 +186,17 @@
       </div>
       <div class="card">
         <div class="label">Respuesta</div>
-        <div class="text" id="assistantText">—</div>
+        <div class="text" id="assistantText">Audio recibido</div>
       </div>
     </div>
 
-    <div class="hint">Zoia envía texto a n8n y reproduce la respuesta con voz del navegador.</div>
+    <audio id="player" class="audio-player" controls></audio>
+    <div class="hint">El navegador convierte tu voz a texto. n8n responde directamente con audio.</div>
   </div>
 
   <script>
-    const WEBHOOK_URL = 'https://zoia-n8n-n8n.bierdv.easypanel.host/webhook/93014de2-ac32-47a9-8ddc-7c00bff78c73';
-    const WELCOME_TEXT = 'Hola, soy Zoia.';
+    const WEBHOOK_URL = 'const WEBHOOK_URL = 'https://zoia-n8n-n8n.bierdv.easypanel.host/webhook/93014de2-ac32-47a9-8ddc-7c00bff78c73';
+    const WELCOME_TEXT = 'Hola, soy Zoia. Ya estoy lista. Puedes hablar cuando quieras.';
 
     const statusEl = document.getElementById('status');
     const stateValue = document.getElementById('stateValue');
@@ -180,6 +204,7 @@
     const userTextEl = document.getElementById('userText');
     const assistantTextEl = document.getElementById('assistantText');
     const liveTextEl = document.getElementById('liveText');
+    const player = document.getElementById('player');
     const startOverlay = document.getElementById('startOverlay');
     const startBtn = document.getElementById('startBtn');
 
@@ -223,7 +248,7 @@
       }, SILENCE_MS);
     }
 
-    function speakText(text) {
+    function speakWelcomeBrowser(text) {
       if (!('speechSynthesis' in window) || !text) return Promise.resolve();
 
       return new Promise((resolve) => {
@@ -234,7 +259,7 @@
 
         utter.onstart = () => {
           isSpeaking = true;
-          setMode('speaking', 'Zoia está hablando...');
+          setMode('speaking', 'Zoia te da la bienvenida...');
         };
 
         utter.onend = () => {
@@ -265,6 +290,7 @@
 
       recognition.onresult = (event) => {
         let interim = '';
+
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const text = event.results[i][0].transcript.trim();
           if (event.results[i].isFinal) {
@@ -295,9 +321,11 @@
 
     function startRecognition() {
       if (!recognition || recognitionRunning || isSpeaking || isProcessing) return;
+
       finalTranscript = '';
       liveTextEl.textContent = 'Te escucho...';
       setMode('listening', 'Te escucho...');
+
       try {
         recognition.start();
         recognitionRunning = true;
@@ -306,10 +334,13 @@
 
     function stopRecognitionOnly() {
       if (!recognition || !recognitionRunning) return;
+
       try {
         recognition.stop();
       } catch (e) {}
+
       recognitionRunning = false;
+
       if (silenceTimer) {
         clearTimeout(silenceTimer);
         silenceTimer = null;
@@ -320,6 +351,7 @@
       stopRecognitionOnly();
 
       const text = finalTranscript.trim();
+
       if (!text) {
         setMode('idle', 'No te he oído claro. Puedes repetir.');
         setTimeout(() => startRecognition(), 500);
@@ -327,6 +359,7 @@
       }
 
       userTextEl.textContent = text;
+      assistantTextEl.textContent = 'Generando audio...';
       isProcessing = true;
       setMode('processing', 'Procesando tu mensaje...');
 
@@ -347,20 +380,27 @@
           throw new Error(errorText || 'Error en el servidor');
         }
 
-        const data = await response.json();
-        const reply = data.reply || data.response || data.text || '';
+        const contentType = response.headers.get('content-type') || '';
 
-        if (!reply) {
-          throw new Error('El agente no devolvió texto');
+        if (contentType.includes('application/json')) {
+          const data = await response.json();
+          assistantTextEl.textContent = data.reply || data.response || 'El workflow devolvió JSON, no audio';
+          throw new Error('El webhook no está devolviendo audio binario');
         }
 
-        assistantTextEl.textContent = reply;
+        const arrayBuffer = await response.arrayBuffer();
+        const blob = new Blob([arrayBuffer], { type: contentType || 'audio/mpeg' });
+        const url = URL.createObjectURL(blob);
+
+        player.src = url;
+        player.load();
+
+        assistantTextEl.textContent = 'Audio recibido';
         isProcessing = false;
+        isSpeaking = true;
+        setMode('speaking', 'Zoia está hablando...');
 
-        await speakText(reply);
-
-        setMode('idle', 'Puedes hablar');
-        setTimeout(() => startRecognition(), 400);
+        await player.play();
 
       } catch (error) {
         console.error(error);
@@ -373,9 +413,27 @@
       }
     }
 
+    player.addEventListener('play', () => {
+      isSpeaking = true;
+      setMode('speaking', 'Zoia está hablando...');
+    });
+
+    player.addEventListener('ended', () => {
+      isSpeaking = false;
+      setMode('idle', 'Puedes hablar');
+      setTimeout(() => startRecognition(), 400);
+    });
+
+    player.addEventListener('pause', () => {
+      if (!isProcessing && isSpeaking) {
+        isSpeaking = false;
+        setMode('idle', 'Puedes hablar');
+        setTimeout(() => startRecognition(), 400);
+      }
+    });
+
     async function bootstrap() {
       if (hasStarted) return;
-
       if (!setupRecognition()) return;
 
       hasStarted = true;
@@ -385,7 +443,7 @@
 
       await new Promise(r => setTimeout(r, 2000));
       assistantTextEl.textContent = WELCOME_TEXT;
-      await speakText(WELCOME_TEXT);
+      await speakWelcomeBrowser(WELCOME_TEXT);
 
       setMode('idle', 'Puedes hablar');
       setTimeout(() => startRecognition(), 400);
