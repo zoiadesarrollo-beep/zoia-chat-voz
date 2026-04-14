@@ -402,7 +402,7 @@
     let isSpeaking = false;
     let hasStarted = false;
 
-    const SILENCE_THRESHOLD = 18;
+    const SILENCE_THRESHOLD = 12;
     const SILENCE_DURATION = 1800;
     const MIN_RECORD_MS = 1000;
 
@@ -542,35 +542,54 @@
 
     function watchSilence() {
       cancelAnimationFrame(volumeLoop);
-
+    
+      const MAX_WAIT_FOR_SPEECH = 6000; // si en 6s no detecta voz, reinicia escucha
+      let hasSpoken = false;
+    
       const check = () => {
         if (!isRecording || isProcessing || isSpeaking) return;
-
+    
         const volume = getVolumeLevel();
         const now = Date.now();
-
+        const duracionTotal = now - recordingStartedAt;
+    
+        // Detecta voz real
         if (volume > SILENCE_THRESHOLD) {
+          hasSpoken = true;
           lastSpeechTime = now;
-
-          if (silenceTimer) {
-            clearTimeout(silenceTimer);
-            silenceTimer = null;
-          }
         }
-
-        if (lastSpeechTime > 0) {
+    
+        // Si ya habló, corta cuando lleva un rato en silencio
+        if (hasSpoken) {
           const msSinHablar = now - lastSpeechTime;
-          const duracionTotal = now - recordingStartedAt;
-
+    
           if (msSinHablar >= SILENCE_DURATION && duracionTotal >= MIN_RECORD_MS) {
             stopAndSend();
             return;
           }
+        } else {
+          // Si no ha hablado nada en varios segundos, reinicia la escucha
+          if (duracionTotal >= MAX_WAIT_FOR_SPEECH) {
+            isRecording = false;
+    
+            const stopped = new Promise((resolve) => {
+              mediaRecorder.onstop = resolve;
+            });
+    
+            mediaRecorder.stop();
+    
+            stopped.then(() => {
+              setMode('idle', 'No detecto voz todavía...');
+              setTimeout(() => beginListeningLoop(), 400);
+            });
+    
+            return;
+          }
         }
-
+    
         volumeLoop = requestAnimationFrame(check);
       };
-
+    
       volumeLoop = requestAnimationFrame(check);
     }
 
