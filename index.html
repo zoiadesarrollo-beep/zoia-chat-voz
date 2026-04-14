@@ -395,16 +395,16 @@
     let source = null;
     let silenceTimer = null;
     let volumeLoop = null;
+    let lastSpeechTime = 0;
 
     let isRecording = false;
     let isProcessing = false;
     let isSpeaking = false;
     let hasStarted = false;
 
-    let lastSpeechTime = 0;
-    const SILENCE_THRESHOLD = 40;
-    const SILENCE_DURATION = 2400;
-    const MIN_RECORD_MS = 3500;
+    const SILENCE_THRESHOLD = 18;
+    const SILENCE_DURATION = 1800;
+    const MIN_RECORD_MS = 1000;
 
     let recordingStartedAt = 0;
 
@@ -528,52 +528,51 @@
 
     function beginListeningLoop() {
       if (isProcessing || isSpeaking || isRecording || !mediaRecorder) return;
-    
+
       audioChunks = [];
       silenceTimer = null;
       recordingStartedAt = Date.now();
       lastSpeechTime = 0;
-    
+
       mediaRecorder.start(200);
       isRecording = true;
       setMode('listening', 'Te escucho...');
       watchSilence();
     }
+
     function watchSilence() {
-        cancelAnimationFrame(volumeLoop);
-      
-        const check = () => {
-          if (!isRecording || isProcessing || isSpeaking) return;
-      
-          const volume = getVolumeLevel();
-          const now = Date.now();
-      
-          // Si detecta voz real, actualiza la última vez que hablaste
-          if (volume > SILENCE_THRESHOLD) {
-            lastSpeechTime = now;
-      
-            if (silenceTimer) {
-              clearTimeout(silenceTimer);
-              silenceTimer = null;
-            }
+      cancelAnimationFrame(volumeLoop);
+
+      const check = () => {
+        if (!isRecording || isProcessing || isSpeaking) return;
+
+        const volume = getVolumeLevel();
+        const now = Date.now();
+
+        if (volume > SILENCE_THRESHOLD) {
+          lastSpeechTime = now;
+
+          if (silenceTimer) {
+            clearTimeout(silenceTimer);
+            silenceTimer = null;
           }
-      
-          // Solo empezar a pensar en cortar si ya ha habido voz al menos una vez
-          if (lastSpeechTime > 0) {
-            const msSinHablar = now - lastSpeechTime;
-            const duracionTotal = now - recordingStartedAt;
-      
-            if (msSinHablar >= SILENCE_DURATION && duracionTotal >= MIN_RECORD_MS) {
-              stopAndSend();
-              return;
-            }
+        }
+
+        if (lastSpeechTime > 0) {
+          const msSinHablar = now - lastSpeechTime;
+          const duracionTotal = now - recordingStartedAt;
+
+          if (msSinHablar >= SILENCE_DURATION && duracionTotal >= MIN_RECORD_MS) {
+            stopAndSend();
+            return;
           }
-      
-          volumeLoop = requestAnimationFrame(check);
-        };
-      
+        }
+
         volumeLoop = requestAnimationFrame(check);
-      }
+      };
+
+      volumeLoop = requestAnimationFrame(check);
+    }
 
     async function stopAndSend() {
       if (!isRecording) return;
@@ -601,8 +600,8 @@
         const ext = recordedType.includes('ogg')
           ? 'ogg'
           : recordedType.includes('mp4')
-          ? 'm4a'
-          : 'webm';
+            ? 'm4a'
+            : 'webm';
 
         const blob = new Blob(audioChunks, { type: recordedType });
 
@@ -610,13 +609,6 @@
           isProcessing = false;
           setMode('idle', 'No he detectado voz clara. Puedes hablar otra vez.');
           setTimeout(() => beginListeningLoop(), 600);
-          return;
-        }
-        if (blob.size < 5000) {
-          console.log('Audio demasiado pequeño, ignorando...');
-          isProcessing = false;
-          setMode('idle', 'Esperando voz real...');
-          setTimeout(() => beginListeningLoop(), 500);
           return;
         }
 
@@ -706,8 +698,6 @@
         await setupMic();
 
         setMode('idle', 'Zoia iniciada');
-
-
         setMode('idle', 'Puedes hablar');
         setTimeout(() => beginListeningLoop(), 500);
 
