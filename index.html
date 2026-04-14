@@ -401,8 +401,9 @@
     let isSpeaking = false;
     let hasStarted = false;
 
+    let lastSpeechTime = 0;
     const SILENCE_THRESHOLD = 40;
-    const SILENCE_DURATION = 1400;
+    const SILENCE_DURATION = 2400;
     const MIN_RECORD_MS = 3500;
 
     let recordingStartedAt = 0;
@@ -527,43 +528,52 @@
 
     function beginListeningLoop() {
       if (isProcessing || isSpeaking || isRecording || !mediaRecorder) return;
-
+    
       audioChunks = [];
       silenceTimer = null;
       recordingStartedAt = Date.now();
-
+      lastSpeechTime = 0;
+    
       mediaRecorder.start(200);
       isRecording = true;
       setMode('listening', 'Te escucho...');
       watchSilence();
     }
-
     function watchSilence() {
-      cancelAnimationFrame(volumeLoop);
-
-      const check = () => {
-        if (!isRecording || isProcessing || isSpeaking) return;
-
-        const volume = getVolumeLevel();
-
-        if (volume > SILENCE_THRESHOLD) {
-          if (silenceTimer) {
-            clearTimeout(silenceTimer);
-            silenceTimer = null;
+        cancelAnimationFrame(volumeLoop);
+      
+        const check = () => {
+          if (!isRecording || isProcessing || isSpeaking) return;
+      
+          const volume = getVolumeLevel();
+          const now = Date.now();
+      
+          // Si detecta voz real, actualiza la última vez que hablaste
+          if (volume > SILENCE_THRESHOLD) {
+            lastSpeechTime = now;
+      
+            if (silenceTimer) {
+              clearTimeout(silenceTimer);
+              silenceTimer = null;
+            }
           }
-        } else {
-          if (!silenceTimer && Date.now() - recordingStartedAt > MIN_RECORD_MS) {
-            silenceTimer = setTimeout(() => {
+      
+          // Solo empezar a pensar en cortar si ya ha habido voz al menos una vez
+          if (lastSpeechTime > 0) {
+            const msSinHablar = now - lastSpeechTime;
+            const duracionTotal = now - recordingStartedAt;
+      
+            if (msSinHablar >= SILENCE_DURATION && duracionTotal >= MIN_RECORD_MS) {
               stopAndSend();
-            }, SILENCE_DURATION);
+              return;
+            }
           }
-        }
-
+      
+          volumeLoop = requestAnimationFrame(check);
+        };
+      
         volumeLoop = requestAnimationFrame(check);
-      };
-
-      volumeLoop = requestAnimationFrame(check);
-    }
+      }
 
     async function stopAndSend() {
       if (!isRecording) return;
