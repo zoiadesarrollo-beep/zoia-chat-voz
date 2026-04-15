@@ -289,25 +289,18 @@
     <div class="config-fields" id="configFields">
       <div>
         <div class="config-label">N8N Webhook URL</div>
-        <input class="config-input" id="webhookUrl" type="url" placeholder="https://zoia-n8n-n8n.bierdv.easypanel.host/webhook/voice-chat" />
+        <input class="config-input" id="webhookUrl" type="url" value="https://zoia-n8n-n8n.bierdv.easypanel.host/webhook/voice-chat" />
       </div>
       <div>
         <div class="config-label">Idioma de escucha</div>
         <select class="config-input" id="langSelect">
-          <option value="es-ES">Español (España)</option>
-          <option value="es-MX">Español (México)</option>
-          <option value="en-US">English (US)</option>
-          <option value="en-GB">English (UK)</option>
-          <option value="fr-FR">Français</option>
-          <option value="de-DE">Deutsch</option>
-          <option value="pt-BR">Português (BR)</option>
+          <option value="es-ES" selected>Español (España)</option>
         </select>
       </div>
       <div>
         <div class="config-label">Modo de envío</div>
         <select class="config-input" id="sendMode">
-          <option value="text">Solo texto (transcripción)</option>
-          <option value="audio">Audio + texto</option>
+          <option value="text" selected>Solo texto (transcripción)</option>
         </select>
       </div>
       <button class="config-save" onclick="saveConfig()">✓ Guardar</button>
