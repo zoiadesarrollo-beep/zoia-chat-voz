@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Z.O.I.A</title>
+  <title>ZOIA</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="ZOIA">
+  <link rel="apple-touch-icon" href="favicon_zoia.png">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -61,7 +66,6 @@
       margin-bottom: 6px;
     }
 
-    /* ── MIC ── */
     .mic-area {
       margin: 14px auto 10px;
       position: relative;
@@ -138,7 +142,6 @@
     .mic-icon { width: 30px; height: 30px; }
     .mic-label { font-size: 8px; letter-spacing: 2px; color: rgba(77,217,255,0.65); }
 
-    /* ── WAVEFORM ── */
     .waveform-container {
       width: 100%;
       max-width: 480px;
@@ -152,7 +155,6 @@
     }
     .wave-bar { width: 3px; background: rgba(77,217,255,0.25); border-radius: 2px; height: 3px; transition: height 0.08s ease; }
 
-    /* ── STATUS ── */
     .status-bar {
       width: 100%;
       max-width: 480px;
@@ -170,7 +172,6 @@
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
     .status-text { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: rgba(77,217,255,0.4); }
 
-    /* ── CHAT LOG ── */
     .chat-log {
       width: 100%;
       max-width: 480px;
